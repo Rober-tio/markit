@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вход | MarkIt</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .login-container {
+      background: #fff;
+      padding: 40px 30px;
+      border-radius: 14px;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+      width: 100%;
+      max-width: 450px;
+      box-sizing: border-box;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #333;
+      font-size: 28px;
+    }
+
+    form div {
+      margin-bottom: 20px;
+    }
+
+    label, p {
+      display: block;
+      margin-bottom: 6px;
+      color: #555;
+      font-size: 17px;
+    }
+
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 17px;
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background-color: #0077ff;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #005ec4;
+    }
+
+    .signup-link {
+      margin-top: 18px;
+      text-align: center;
+      font-size: 16px;
+    }
+
+    .signup-link a {
+      color: #0077ff;
+      text-decoration: none;
+    }
+
+    .signup-link a:hover {
+      text-decoration: underline;
+    }
+
+    ul {
+      color: red;
+      padding-left: 20px;
+      margin-top: 8px;
+      margin-bottom: 0;
+      font-size: 15px;
+    }
+
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 35px 25px;
+        max-width: 95%;
+      }
+
+      h2 {
+        font-size: 24px;
+      }
+
+      input[type="text"],
+      input[type="password"],
+      button {
+        font-size: 16px;
+        padding: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Вход в MarkIt</h2>
+    <form method="post">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <ul>
+          {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      <div>
+        <p>Ваш логин</p>
+        {{ form.username }}
+        {% if form.username.errors %}
+          <ul>
+            {% for error in form.username.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+
+      <div>
+        <p>Пароль</p>
+        {{ form.password }}
+        {% if form.password.errors %}
+          <ul>
+            {% for error in form.password.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+
+      <button type="submit">Войти</button>
+    </form>
+
+    <div class="signup-link">
+      Нет аккаунта? <a href="{% url 'registration:register' %}">Зарегистрироваться</a>
+    </div>
+  </div>
+</body>
+</html>

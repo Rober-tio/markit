@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarkIt</title>
+  <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=8f4c203b-34ad-47e1-a784-0853cb993680" type="text/javascript"></script>
+  <style>
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f6f8;
+    color: #333;
+  }
+
+  #map-container {
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 60px);
+    margin-top: 60px;
+  }
+
+  #map {
+    width: 100%;
+    height: 100%;
+  }
+
+  #note-form-container {
+    display: none;
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    padding: 20px;
+    width: 320px;
+    max-width: 90%;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+  }
+
+  #note-form-container h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-align: center;
+    color: #333;
+  }
+
+  #note-form-container label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  #note-form-container input[type="text"],
+  #note-form-container textarea,
+  #note-form-container input[type="file"] {
+    width: 90%;
+    max-width: 90%;
+    padding: 8px 10px;
+    margin-bottom: 12px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    font-size: 14px;
+  }
+
+  #note-form-container textarea {
+    resize: vertical;
+    min-height: 40px;
+  }
+
+  #note-form-container button {
+    background-color: #1976d2;
+    color: white;
+    padding: 10px 14px;
+    font-size: 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: background-color 0.3s ease;
+  }
+
+  #note-form-container button:hover {
+    background-color: #125ea6;
+  }
+
+  #note-form-container .delete-button {
+    background-color: #f44336;
+  }
+
+  #note-form-container .delete-button:hover {
+    background-color: #c62828;
+  }
+
+  #note-form-container img {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+
+  .logout-button {
+    background-color: #f44336;
+    color: white;
+    padding: 6px 12px;
+    font-size: 14px;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+  }
+
+  .logout-button:hover {
+    background-color: #d32f2f;
+  }
+
+  #top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    min-height: 60px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    padding: 0px 20px;
+    z-index: 1100;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  .app-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+  }
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .username {
+    font-weight: 500;
+    color: #444;
+    font-size: 15px;
+    word-break: break-word;
+  }
+
+  .user-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+
+  .message-popup {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    z-index: 9999;
+    text-align: center;
+    max-width: 90%;
+    font-size: 15px;
+    color: white;
+  }
+
+  .message-blue {
+    background-color: #1976d2;
+  }
+
+  .message-red {
+    background-color: #f44336;
+  }
+
+  .message-popup button {
+    margin-top: 10px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .blue-button {
+    background-color: #fff;
+    color: #1976d2;
+  }
+
+  .red-button {
+    background-color: #fff;
+    color: #f44336;
+  }
+
+  @media (max-width: 500px) {
+  #top-bar {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  .app-title {
+    width: auto;
+    text-align: left;
+    margin: 0;
+  }
+
+  .user-info {
+    justify-content: flex-end;
+    width: auto;
+    gap: 8px;
+  }
+
+  .user-actions {
+    gap: 10px;
+  }
+}
+  </style>
+</head>
+<body>
+  <div id="top-bar">
+    <div class="app-title">🗺️ MarkIt</div>
+    {% if user.is_authenticated %}
+      <div class="user-info">
+        <div class="user-actions">
+          <span class="username">{{ request.user.username }}</span>
+          <a href="{% url 'registration:logout' %}" class="logout-button">Выйти</a>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+  <div id="map-container">
+    <div id="map"></div>
+    <!-- Форма для заметки -->
+    <div id="note-form-container">
+      <h3 id="form-title">Новая заметка</h3>
+      <form id="note-form" method="post" action="/map/" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.latitude }} {{ form.longitude }}
+        <div>
+          {{ form.title.label_tag }}<br>
+          {{ form.title }}<br>{{ form.title.errors }}
+        </div>
+        <div>
+          {{ form.description.label_tag }}<br>
+          {{ form.description }}<br>{{ form.description.errors }}
+        </div>
+        <div>
+          <input type="file" name="image">
+          {% if form.instance.image %}
+            <div style="margin-bottom:10px;">
+              <img src="{{ form.instance.image.url }}" alt="Фото" style="max-width:100%; height:auto; border:1px solid #ccc;">
+            </div>
+          {% endif %}
+        <div style="text-align:right; margin-top:10px;">
+          <button type="button" onclick="cancel()">Отмена</button>
+          <button type="submit">Сохранить</button>
+          {% if edit_mode %}
+            <button type="button" onclick="showDeleteConfirm()">Удалить</button>
+          {% endif %}
+          <input type="hidden" name="map_center_lat" id="map_center_lat">
+          <input type="hidden" name="map_center_lon" id="map_center_lon">
+          <input type="hidden" name="map_zoom" id="map_zoom">
+        </div>
+      </form>
+      {% if edit_mode %}
+        <div id="delete-confirm" style="display: none; margin-top: 10px;">
+          <form method="post" action="{% url 'map:delete' form.instance.slug %}">
+            {% csrf_token %}
+            <p>Удалить заметку?</p>
+            <button type="submit">Удалить</button>
+            <button type="button" onclick="hideDeleteConfirm()">Отмена</button>
+          </form>
+        </div>
+      {% endif %}
+      
+    </div>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      {% if 'Метка успешно добавлена ;)' in message.message or 'Это место занято ;(' in message.message %}
+        <div class="message-popup message-blue">
+          <p style="margin: 0 0 10px;">{{ message }}</p>
+          <button onclick="this.parentElement.style.display='none';" class="blue-button">Ок</button>
+        </div>
+      {% else %}
+        <div class="message-popup message-red">
+          <p style="margin: 0 0 10px;">{{ message }}</p>
+          <button onclick="this.parentElement.style.display='none';" class="red-button">Исправлюсь</button>
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  {{ notes|json_script:"notes-data" }}
+
+  {% if delete %}
+  <script>
+    if (confirm("Удалить «{{ confirm_delete.title }}»?")) {
+      fetch("{% url 'map:delete' confirm_delete.slug %}", {
+        method: "POST",
+        headers: {'X-CSRFToken': '{{ csrf_token }}'},
+      }).then(_ => location.href="{% url 'map:index' %}");
+    } else {
+      location.href="{% url 'map:index' %}";
+    }
+  </script>
+  {% endif %}
+
+  <script>
+    let map;
+    let lastMapCenter = null;
+    let lastMapZoom = null;
+
+    ymaps.ready(init);
+    function init() {
+      const savedLat = "{{ request.session.map_center.0|default:'55.751244' }}";
+      const savedLon = "{{ request.session.map_center.1|default:'37.618423' }}";
+      const savedZoom = "{{ request.session.map_zoom|default:'10' }}";
+
+      map = new ymaps.Map('map', {
+        center: [parseFloat(savedLat), parseFloat(savedLon)],
+        zoom: parseInt(savedZoom)
+      });
+
+      lastMapCenter = map.getCenter();
+      lastMapZoom = map.getZoom();
+
+      map.events.add('boundschange', function () {
+        lastMapCenter = map.getCenter();
+        lastMapZoom = map.getZoom();
+      });
+
+      const notes = JSON.parse(document.getElementById('notes-data').textContent);
+      const path = window.location.pathname;
+      const formContainer = document.getElementById('note-form-container');
+      const formLat = document.getElementById('id_latitude');
+      const formLon = document.getElementById('id_longitude');
+      const titleEl = document.getElementById('id_title');
+      const descEl = document.getElementById('id_description');
+      const formTitle = document.getElementById('form-title');
+      const noteForm = document.getElementById('note-form');
+
+      const match = path.match(/^\/map\/([^\/]+)\/?$/);
+
+      if (match) {
+        const slug = match[1];
+        const note = notes.find(n => n.slug === slug);
+        if (note) {
+          formContainer.style.display = 'block';
+          formTitle.textContent = 'Редактировать заметку';
+          formLat.value = note.latitude;
+          formLon.value = note.longitude;
+          titleEl.value = note.title;
+          descEl.value = note.description;
+          noteForm.action = `/map/${slug}`;
+          map.behaviors.disable(['drag', 'dblClickZoom', 'scrollZoom', 'multiTouch']);
+          map.controls.remove('searchControl');
+          map.controls.remove('zoomControl');
+          const placemark = new ymaps.Placemark([note.latitude, note.longitude], {}, {
+            preset: 'islands#redDotIcon'
+          });
+          map.geoObjects.add(placemark);
+          map.setCenter([note.latitude, note.longitude], 12);
+        }
+      } else {
+        map.controls.add('zoomControl');
+        map.controls.add('searchControl');
+        notes.forEach(function (n) {
+          const placemark = new ymaps.Placemark(
+            [n.latitude, n.longitude],
+            {
+              balloonContent: `
+                <div style="max-width:250px;">
+                  <h3>${n.title}</h3>
+                  <p>${n.description}</p>
+                  ${n.image ? `<img src="${n.image}" alt="${n.title}" style="max-width:100%; height:auto;">` : ''}
+                  <p>${n.created_at}</p>
+                  <button onclick="copyToClipboard('${window.location.origin}/map/share/${n.public_id}')">
+                    Поделиться
+                  </button>
+                  <button type="button" onclick="location.href='/map/${n.slug}'">Настроить</button>
+                </div>
+              `
+            },
+            { preset: 'islands#blueDotIcon' }
+          );
+          map.geoObjects.add(placemark);
+        });
+
+        map.events.add('click', function (e) {
+          const coords = e.get('coords');
+          formLat.value = coords[0].toFixed(6);
+          formLon.value = coords[1].toFixed(6);
+          formTitle.textContent = 'Новая заметка';
+          noteForm.action = '/map/';
+          formContainer.style.display = 'block';
+
+          if (window.preview) map.geoObjects.remove(window.preview);
+          window.preview = new ymaps.Placemark(coords, {}, {
+            preset: 'islands#redDotIcon'
+          });
+          map.geoObjects.add(window.preview);
+        });
+      }
+    }
+
+    function cancel() {
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+
+      const formData = new FormData();
+      formData.append('map_center_lat', center[0]);
+      formData.append('map_center_lon', center[1]);
+      formData.append('map_zoom', zoom);
+
+      fetch("/map/", {
+        method: "POST",
+        body: formData,
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}'
+        }
+      }).then(() => {
+        window.location.href = "/map/";
+      });
+    }
+
+    function showDeleteConfirm() {
+      document.getElementById('delete-confirm').style.display = 'block';
+    }
+
+    function hideDeleteConfirm() {
+      document.getElementById('delete-confirm').style.display = 'none';
+    }
+
+    function saveMapStateBeforeSubmit() {
+      const center = map.getCenter();
+      document.getElementById('map_center_lat').value = center[0];
+      document.getElementById('map_center_lon').value = center[1];
+      document.getElementById('map_zoom').value = map.getZoom();
+    }
+
+    function appendMapStateToForm(form) {
+      if (!lastMapCenter || !lastMapZoom) return;
+      form.querySelector('[name="map_center_lat"]').value = lastMapCenter[0];
+      form.querySelector('[name="map_center_lon"]').value = lastMapCenter[1];
+      form.querySelector('[name="map_zoom"]').value = lastMapZoom;
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Ссылка скопирована!');
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const noteForm = document.getElementById('note-form');
+      if (noteForm) {
+        noteForm.addEventListener('submit', saveMapStateBeforeSubmit);
+      }
+
+      const deleteForm = document.querySelector('#delete-confirm form');
+      if (deleteForm) {
+        deleteForm.addEventListener('submit', function () {
+          appendMapStateToForm(deleteForm);
+        });
+      }
+    });
+  </script>
+</body>
+</html>
